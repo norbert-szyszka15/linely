@@ -1,0 +1,89 @@
+@media (max-width: 980px) {
+    .login-layout,
+    .cards-grid,
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .login-layout {
+        min-height: auto;
+    }
+
+    .section-head,
+    .tree-toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 640px) {
+    .app-shell {
+        width: min(100% - 18px, 1440px);
+        padding-top: 9px;
+    }
+
+    .topbar {
+        position: static;
+        align-items: flex-start;
+        flex-direction: column;
+        border-radius: 22px;
+    }
+
+    .top-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .button {
+        width: 100%;
+    }
+
+    .top-actions .button,
+    .top-actions .icon-button,
+    .top-actions .nav-link {
+        width: auto;
+    }
+
+    .login-hero,
+    .auth-card,
+    .tree-toolbar,
+    .tree-card,
+    .table-card,
+    .form-card {
+        padding: 18px;
+        border-radius: 20px;
+    }
+
+    .demo-grid,
+    .person-form {
+        grid-template-columns: 1fr;
+    }
+
+    .tree-controls {
+        position: static;
+        margin-bottom: 10px;
+        width: fit-content;
+    }
+
+    .tree-viewport {
+        height: calc(100dvh - 210px);
+        min-height: 430px;
+        border-radius: 22px;
+    }
+
+    .person-node {
+        width: 232px;
+    }
+
+    .node-popover,
+    .node-popover.wider {
+        top: calc(100% + 10px);
+        left: 0;
+        width: min(310px, 88vw);
+    }
+
+    .modal-card {
+        padding: 18px;
+        border-radius: 22px;
+    }
+}

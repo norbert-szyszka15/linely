@@ -1,0 +1,28 @@
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.tree-card {
+    display: flex;
+    min-height: 260px;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 24px;
+    border-radius: var(--radius);
+    padding: 24px;
+}
+
+.tree-card h2 {
+    margin-top: 0;
+}
+
+.tree-card p {
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.create-card {
+    background: linear-gradient(135deg, rgba(47, 125, 115, 0.12), var(--surface));
+}

@@ -1,0 +1,31 @@
+.admin-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 18px;
+}
+
+.table-card {
+    overflow: hidden;
+    border-radius: var(--radius);
+    padding: 22px;
+}
+
+.table-card h2 {
+    margin-top: 0;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.text-danger {
+    border: 0;
+    color: var(--danger);
+    background: transparent;
+    cursor: pointer;
+    font-weight: 900;
+}
+
+.muted-row {
+    opacity: 0.5;
+}

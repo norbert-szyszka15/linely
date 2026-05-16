@@ -1,0 +1,98 @@
+.form-page {
+    justify-items: center;
+}
+
+.form-card {
+    width: min(980px, 100%);
+    border-radius: var(--radius);
+    padding: 32px;
+}
+
+.person-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.full-span {
+    grid-column: 1 / -1;
+}
+
+.check-row {
+    align-self: end;
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.check-row input {
+    width: auto;
+}
+
+.modal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: none;
+    place-items: center;
+    padding: 22px;
+}
+
+.modal-layer.is-open {
+    display: grid;
+}
+
+.modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 42% 28%, rgba(118, 185, 170, 0.18), transparent 26rem),
+        rgba(9, 18, 16, 0.48);
+    backdrop-filter: blur(18px) saturate(1.16);
+    animation: fade-in 0.18s ease both;
+}
+
+.modal-card {
+    position: relative;
+    width: min(980px, calc(100vw - 34px));
+    max-height: min(88vh, 920px);
+    overflow: auto;
+    border-radius: 30px;
+    padding: 28px;
+    animation: modal-glass-in 0.26s cubic-bezier(0.2, 0.9, 0.24, 1.12) both;
+}
+
+.modal-head {
+    margin-bottom: 22px;
+}
+
+.modal-head h2 {
+    margin: 0;
+    font-size: clamp(1.45rem, 3vw, 2.5rem);
+    line-height: 1.05;
+    letter-spacing: 0;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modal-glass-in {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.965);
+        filter: blur(7px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+    }
+}
