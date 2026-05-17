@@ -157,6 +157,27 @@ document.querySelectorAll("[data-tree-root]").forEach((treeRoot) => {
         });
     }
 
+    let lineUpdateFrame = 0;
+    function scheduleLineUpdate() {
+        if (lineUpdateFrame) {
+            return;
+        }
+
+        lineUpdateFrame = requestAnimationFrame(() => {
+            lineUpdateFrame = 0;
+            updateLines();
+        });
+    }
+
+    function pointerToTree(event) {
+        const rect = transform.getBoundingClientRect();
+
+        return {
+            x: (event.clientX - rect.left) / zoom,
+            y: (event.clientY - rect.top) / zoom,
+        };
+    }
+
     function setZoom(nextZoom) {
         const previousZoom = zoom;
         zoom = Math.min(1.7, Math.max(0.45, nextZoom));
@@ -248,58 +269,88 @@ document.querySelectorAll("[data-tree-root]").forEach((treeRoot) => {
     treeRoot.querySelectorAll("[data-node][data-draggable='true']").forEach((node) => {
         const handle = node.querySelector("[data-drag-handle]");
         let drag = null;
-        let moved = false;
+
+        handle?.setAttribute("draggable", "false");
+        handle?.addEventListener("dragstart", (event) => event.preventDefault());
 
         handle?.addEventListener("pointerdown", (event) => {
             if (event.button !== 0) {
                 return;
             }
 
-            drag = {
-                x: event.clientX,
-                y: event.clientY,
-                left: Number.parseFloat(node.style.left) || 0,
-                top: Number.parseFloat(node.style.top) || 0,
-            };
-            moved = false;
-            node.classList.add("is-dragging");
-            node.setPointerCapture(event.pointerId);
-        });
-
-        handle?.addEventListener("click", (event) => {
-            if (moved) {
-                event.preventDefault();
+            if (event.target.closest("a, button, input, select, textarea")) {
+                return;
             }
+
+            event.stopPropagation();
+
+            const left = Number.parseFloat(node.style.left) || 0;
+            const top = Number.parseFloat(node.style.top) || 0;
+            const pointer = pointerToTree(event);
+            drag = {
+                pointerId: event.pointerId,
+                startX: event.clientX,
+                startY: event.clientY,
+                offsetX: pointer.x - left,
+                offsetY: pointer.y - top,
+                active: false,
+                moved: false,
+            };
+            node.setPointerCapture?.(event.pointerId);
         });
 
         node.addEventListener("pointermove", (event) => {
-            if (!drag) {
+            if (!drag || event.pointerId !== drag.pointerId) {
                 return;
             }
 
-            const rawLeft = Math.max(0, drag.left + (event.clientX - drag.x) / zoom);
-            const rawTop = Math.max(0, drag.top + (event.clientY - drag.y) / zoom);
-            moved = moved || Math.abs(event.clientX - drag.x) > 4 || Math.abs(event.clientY - drag.y) > 4;
+            const pointer = pointerToTree(event);
+            const rawLeft = Math.max(0, pointer.x - drag.offsetX);
+            const rawTop = Math.max(0, pointer.y - drag.offsetY);
+            drag.moved = drag.moved || Math.abs(event.clientX - drag.startX) > 4 || Math.abs(event.clientY - drag.startY) > 4;
+            if (!drag.moved) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (!drag.active) {
+                drag.active = true;
+                node.classList.add("is-dragging");
+            }
+
             const nextLeft = snap(rawLeft);
             const nextTop = snap(rawTop);
-            node.style.left = `${nextLeft}px`;
-            node.style.top = `${nextTop}px`;
-            updateLines();
-        });
-
-        node.addEventListener("pointerup", (event) => {
-            if (!drag) {
+            if (node.style.left === `${nextLeft}px` && node.style.top === `${nextTop}px`) {
                 return;
             }
 
+            node.style.left = `${nextLeft}px`;
+            node.style.top = `${nextTop}px`;
+            scheduleLineUpdate();
+        });
+
+        function stopDragging(event) {
+            if (!drag || event.pointerId !== drag.pointerId) {
+                return;
+            }
+
+            const didMove = drag.moved;
             drag = null;
             node.classList.remove("is-dragging");
-            node.releasePointerCapture(event.pointerId);
+            if (node.hasPointerCapture?.(event.pointerId)) {
+                node.releasePointerCapture(event.pointerId);
+            }
             node.style.left = `${snap(Number.parseFloat(node.style.left) || 0)}px`;
             node.style.top = `${snap(Number.parseFloat(node.style.top) || 0)}px`;
             updateLines();
-            savePosition(node);
-        });
+            if (didMove) {
+                savePosition(node);
+            }
+        }
+
+        node.addEventListener("pointerup", stopDragging);
+        node.addEventListener("pointercancel", stopDragging);
     });
 
     new ResizeObserver(() => {

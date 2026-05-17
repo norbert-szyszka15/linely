@@ -17,7 +17,14 @@
             }
         })();
     </script>
-    <link rel="stylesheet" href="/styles/main.css">
+    <?php
+    $styles = ['base', 'layout', 'auth', 'dashboard', 'tree', 'forms', 'admin', 'responsive'];
+    foreach ($styles as $style):
+        $stylePath = __DIR__ . '/../../styles/' . $style . '.css';
+        $version = file_exists($stylePath) ? (string) filemtime($stylePath) : '1';
+    ?>
+        <link rel="stylesheet" href="/styles/<?= h($style) ?>.css?v=<?= h($version) ?>">
+    <?php endforeach; ?>
 </head>
 <body>
 <div class="app-shell">

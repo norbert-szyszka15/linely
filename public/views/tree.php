@@ -16,8 +16,8 @@ $heading = $isDescendants
             <h1><?= h($heading) ?></h1>
             <p>
                 <?= $isDescendants
-                    ? 'Pokazani są rodzice, dziadkowie, dzieci, wnuki oraz partnerzy wybranej osoby, bez rodzeństwa i kuzynostwa.'
-                    : 'Kliknij osobę, aby zobaczyć jej linię prostą. Osoby można przeciągać, canvas przesuwać środkowym przyciskiem myszy, a widok przybliżać i oddalać.' ?>
+                    ? 'Pokazani są rodzice, dziadkowie, dzieci, wnuki oraz partnerzy potrzebni do pokazania tej linii, bez rodzeństwa i kuzynostwa.'
+                    : 'Użyj przycisku linii prostej przy wybranej osobie. Osoby można przeciągać, canvas przesuwać środkowym przyciskiem myszy, a widok przybliżać i oddalać.' ?>
             </p>
         </div>
         <div class="toolbar-actions">
@@ -87,17 +87,26 @@ $heading = $isDescendants
                                      data-person-id="<?= (int) $id ?>"
                                      data-draggable="<?= $isDescendants ? 'false' : 'true' ?>"
                                      style="left: <?= (int) $position['x'] ?>px; top: <?= (int) $position['y'] ?>px;">
-                                <a class="person-main"
-                                   href="/?page=descendants&tree_id=<?= (int) $tree['id'] ?>&root_id=<?= (int) $id ?>"
-                                   <?= $isDescendants ? '' : 'data-drag-handle' ?>>
+                                <?php if ($isDescendants): ?>
+                                    <a class="person-main"
+                                       href="/?page=descendants&tree_id=<?= (int) $tree['id'] ?>&root_id=<?= (int) $id ?>">
+                                <?php else: ?>
+                                    <div class="person-main" data-drag-handle>
+                                <?php endif; ?>
                                     <span class="avatar" style="background: <?= h($person['avatar_color']) ?>;">
                                         <?= h(person_initial($person)) ?>
                                     </span>
                                     <span>
+                                        <?php if (!$isDescendants): ?>
+                                            <a class="button lineage-action"
+                                               href="/?page=descendants&tree_id=<?= (int) $tree['id'] ?>&root_id=<?= (int) $id ?>">
+                                                Pokaż linię prostą
+                                            </a>
+                                        <?php endif; ?>
                                         <strong><?= h(person_name($person)) ?></strong>
                                         <small><?= h(person_years($person)) ?><?= $person['occupation'] ? ' · ' . h($person['occupation']) : '' ?></small>
                                     </span>
-                                </a>
+                                <?= $isDescendants ? '</a>' : '</div>' ?>
 
                                 <?php if (!$isDescendants): ?>
                                     <div class="node-actions">

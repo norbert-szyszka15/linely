@@ -26,11 +26,18 @@ final class TreeLayout
         foreach ($partnerships as $partnership) {
             $person1 = (int) $partnership['person1_id'];
             $person2 = (int) $partnership['person2_id'];
-            if (isset($lineal[$person1]) && isset($byId[$person2])) {
-                $partnerIds[$person2] = ['generation' => $lineal[$person1], 'anchor' => $person1];
+            $status = (string) ($partnership['status'] ?? '');
+            if (
+                isset($lineal[$person1], $byId[$person2])
+                && self::shouldShowLineagePartner($person1, $person2, $rootId, $lineal, $parents, $children)
+            ) {
+                $partnerIds[$person2] = ['generation' => $lineal[$person1], 'anchor' => $person1, 'status' => $status];
             }
-            if (isset($lineal[$person2]) && isset($byId[$person1])) {
-                $partnerIds[$person1] = ['generation' => $lineal[$person2], 'anchor' => $person2];
+            if (
+                isset($lineal[$person2], $byId[$person1])
+                && self::shouldShowLineagePartner($person2, $person1, $rootId, $lineal, $parents, $children)
+            ) {
+                $partnerIds[$person1] = ['generation' => $lineal[$person2], 'anchor' => $person2, 'status' => $status];
             }
         }
 
@@ -38,6 +45,25 @@ final class TreeLayout
         [$positions, $width, $height] = self::positionsFromLineage($byId, $lineal, $partnerIds, $rootId);
 
         return [$positions, $width, $height, array_keys($visible)];
+    }
+
+    private static function shouldShowLineagePartner(int $anchorId, int $partnerId, int $rootId, array $lineal, array $parents, array $children): bool
+    {
+        if ($anchorId === $rootId) {
+            return true;
+        }
+
+        foreach ($children[$anchorId] ?? [] as $childId) {
+            if (!isset($lineal[$childId])) {
+                continue;
+            }
+
+            if (in_array($partnerId, $parents[$childId] ?? [], true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static function walkAncestors(int $personId, int $generation, array $parents, array &$lineal): void
@@ -70,6 +96,7 @@ final class TreeLayout
 
         $minGeneration = $groups ? min(array_keys($groups)) : 0;
         $positions = [];
+        $occupiedByGeneration = [];
         $centerX = 520;
         $startY = 120 + (abs($minGeneration) * 245);
         $maxX = 0;
@@ -91,11 +118,13 @@ final class TreeLayout
                 $x = $centerX + (($index - (($count - 1) / 2)) * 310);
                 $y = $startY + ($generation * 245);
                 $positions[$id] = ['x' => (int) round($x), 'y' => (int) round($y)];
+                $occupiedByGeneration[$generation][] = (int) round($x);
                 $maxX = max($maxX, $x + 300);
                 $maxY = max($maxY, $y + 190);
             }
         }
 
+        $partnersByAnchor = [];
         foreach ($partnerIds as $partnerId => $meta) {
             if (!isset($byId[$partnerId]) || isset($positions[$partnerId])) {
                 continue;
@@ -103,15 +132,69 @@ final class TreeLayout
 
             $generation = (int) $meta['generation'];
             $anchorId = (int) $meta['anchor'];
-            $anchor = $anchorId && isset($positions[$anchorId])
-                ? $positions[$anchorId]
-                : ['x' => $centerX, 'y' => $startY + ($generation * 245)];
-            $positions[$partnerId] = ['x' => $anchor['x'] + 310, 'y' => $anchor['y']];
-            $maxX = max($maxX, $anchor['x'] + 610);
-            $maxY = max($maxY, $anchor['y'] + 190);
+            $partnersByAnchor[$generation . ':' . $anchorId][] = [
+                'id' => $partnerId,
+                'generation' => $generation,
+                'anchor' => $anchorId,
+                'status' => (string) ($meta['status'] ?? ''),
+            ];
+        }
+
+        foreach ($partnersByAnchor as $partners) {
+            usort($partners, function (array $a, array $b) use ($byId) {
+                $statusOrder = self::partnershipStatusWeight($a['status']) <=> self::partnershipStatusWeight($b['status']);
+                if ($statusOrder !== 0) {
+                    return $statusOrder;
+                }
+
+                return strcmp(person_name($byId[$a['id']]), person_name($byId[$b['id']]));
+            });
+
+            foreach ($partners as $partner) {
+                $partnerId = (int) $partner['id'];
+                $generation = (int) $partner['generation'];
+                $anchorId = (int) $partner['anchor'];
+                $occupiedByGeneration[$generation] ??= [];
+
+                $anchor = $anchorId && isset($positions[$anchorId])
+                    ? $positions[$anchorId]
+                    : ['x' => $centerX, 'y' => $startY + ($generation * 245)];
+
+                $slot = 1;
+                $x = $anchor['x'] + (310 * $slot);
+                while (self::isSlotOccupied($occupiedByGeneration[$generation], $x)) {
+                    $slot++;
+                    $x = $anchor['x'] + (310 * $slot);
+                }
+
+                $positions[$partnerId] = ['x' => (int) round($x), 'y' => (int) $anchor['y']];
+                $occupiedByGeneration[$generation][] = (int) round($x);
+                $maxX = max($maxX, $x + 300);
+                $maxY = max($maxY, $anchor['y'] + 190);
+            }
         }
 
         return [$positions, max(1200, (int) $maxX + 240), max(760, (int) $maxY + 220)];
+    }
+
+    private static function isSlotOccupied(array $occupiedXs, int|float $x): bool
+    {
+        foreach ($occupiedXs as $occupiedX) {
+            if (abs((int) $occupiedX - (int) round($x)) < 290) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function partnershipStatusWeight(string $status): int
+    {
+        return match ($status) {
+            'current', 'spouse' => 0,
+            'former' => 1,
+            default => 2,
+        };
     }
 
     private static function automatic(array $people, array $parentLinks): array
