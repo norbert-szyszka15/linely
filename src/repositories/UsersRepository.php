@@ -21,6 +21,23 @@ final class UsersRepository
         return $stmt->fetch() ?: null;
     }
 
+    public function create(string $email, string $passwordHash, string $name, string $role = 'user'): int
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO users (email, password_hash, name, role)
+             VALUES (:email, :password_hash, :name, :role)
+             RETURNING id'
+        );
+        $stmt->execute([
+            'email' => $email,
+            'password_hash' => $passwordHash,
+            'name' => $name,
+            'role' => $role,
+        ]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public function allWithTreeCount(): array
     {
         return $this->db->query(

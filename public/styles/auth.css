@@ -41,6 +41,30 @@
     margin-top: 0;
 }
 
+.auth-divider {
+    width: 100%;
+    margin: 24px 0;
+    border: 0;
+    border-top: 1px solid var(--line);
+}
+
+.form-error {
+    margin: 0 0 14px;
+    border: 1px solid rgba(184, 71, 71, 0.28);
+    border-radius: 16px;
+    padding: 12px 14px;
+    color: var(--danger);
+    background: rgba(184, 71, 71, 0.12);
+    font-weight: 850;
+}
+
+.password-hint {
+    margin: -4px 0 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
 .demo-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

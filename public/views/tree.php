@@ -7,6 +7,25 @@ $isDescendants = $mode === 'descendants';
 $heading = $isDescendants
     ? 'Linia prosta: ' . (isset($root) && $root ? person_name($root) : $tree['name'])
     : $tree['name'];
+$parentsByChild = [];
+foreach ($parentLinks as $link) {
+    $parentId = (int) $link['parent_id'];
+    $childId = (int) $link['child_id'];
+    if (!isset($positions[$parentId], $positions[$childId])) {
+        continue;
+    }
+
+    $parentsByChild[$childId][$parentId] = $parentId;
+}
+
+$childEdgeGroups = [];
+foreach ($parentsByChild as $childId => $parentIds) {
+    $parentIds = array_values($parentIds);
+    sort($parentIds);
+    $key = implode('-', $parentIds);
+    $childEdgeGroups[$key] ??= ['parents' => $parentIds, 'children' => []];
+    $childEdgeGroups[$key]['children'][] = (int) $childId;
+}
 ?>
 
 <main class="tree-page">
@@ -54,15 +73,17 @@ $heading = $isDescendants
                      style="width: <?= (int) $width ?>px; height: <?= (int) $height ?>px;">
                     <div class="tree-transform" data-tree-transform>
                         <svg class="tree-lines" width="<?= (int) $width ?>" height="<?= (int) $height ?>" viewBox="0 0 <?= (int) $width ?> <?= (int) $height ?>">
-                            <?php foreach ($parentLinks as $link): ?>
-                                <?php
-                                $parentId = (int) $link['parent_id'];
-                                $childId = (int) $link['child_id'];
-                                if (!isset($positions[$parentId], $positions[$childId])) {
-                                    continue;
-                                }
-                                ?>
-                                <path class="line child-line" data-line="child" data-from="<?= $parentId ?>" data-to="<?= $childId ?>" />
+                            <?php foreach ($childEdgeGroups as $group): ?>
+                                <g class="tree-edge child-edge"
+                                   data-line="child"
+                                   data-parents="<?= h(implode(',', $group['parents'])) ?>"
+                                   data-children="<?= h(implode(',', $group['children'])) ?>">
+                                    <path class="line child-line" />
+                                    <g class="edge-badge child-badge" data-edge-badge aria-hidden="true">
+                                        <circle cx="0" cy="0" r="14" />
+                                        <path d="M-5 2 L0 -7 L5 2 Z M0 2 L0 8" />
+                                    </g>
+                                </g>
                             <?php endforeach; ?>
 
                             <?php foreach ($partnerships as $partnership): ?>
@@ -73,10 +94,16 @@ $heading = $isDescendants
                                     continue;
                                 }
                                 ?>
-                                <line class="line partner-line <?= h($partnership['status']) ?>"
-                                      data-line="partner"
-                                      data-from="<?= $person1 ?>"
-                                      data-to="<?= $person2 ?>" />
+                                <g class="tree-edge partner-edge <?= h($partnership['status']) ?>"
+                                   data-line="partner"
+                                   data-from="<?= $person1 ?>"
+                                   data-to="<?= $person2 ?>">
+                                    <path class="line partner-line <?= h($partnership['status']) ?>" />
+                                    <g class="edge-badge partner-badge" data-edge-badge aria-hidden="true">
+                                        <circle class="ring ring-left" cx="-5" cy="0" r="6" />
+                                        <circle class="ring ring-right" cx="5" cy="0" r="6" />
+                                    </g>
+                                </g>
                             <?php endforeach; ?>
                         </svg>
 
@@ -163,6 +190,15 @@ $heading = $isDescendants
                                             <input type="hidden" name="parent_id" value="<?= (int) $id ?>">
                                             <label>Wybierz osobę
                                                 <select name="child_id" required>
+                                                    <?php foreach ($people as $candidate): ?>
+                                                        <?php if ((int) $candidate['id'] === (int) $id) continue; ?>
+                                                        <option value="<?= (int) $candidate['id'] ?>"><?= h(person_name($candidate)) ?></option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </label>
+                                            <label>Drugi rodzic
+                                                <select name="co_parent_id">
+                                                    <option value="0">Brak / nieznany</option>
                                                     <?php foreach ($people as $candidate): ?>
                                                         <?php if ((int) $candidate['id'] === (int) $id) continue; ?>
                                                         <option value="<?= (int) $candidate['id'] ?>"><?= h(person_name($candidate)) ?></option>

@@ -1,28 +1,21 @@
-# Editor and OS files
-.vscode/
-.vs/
-.idea/
-.DS_Store
-Thumbs.db
+.git/
+.gitignore
+.dockerignore
 
-# Local configuration and secrets
 config.php
 .env
 .env.*
 !.env.example
 
-# Local TLS material generated for development
 docker/nginx/certs/
 *.key
 *.pem
 *.crt
 *.csr
 
-# Dependencies
 vendor/
 node_modules/
 
-# Runtime files and uploads
 public/uploads/
 storage/
 tmp/
@@ -30,14 +23,12 @@ var/
 logs/
 *.log
 
-# Test and tool caches
 .phpunit.cache/
 .php-cs-fixer.cache
 .phpstan/
 .psalm/
 coverage/
 
-# Docker/database local artifacts
 pg-data/
 postgres-data/
 docker/db/data/

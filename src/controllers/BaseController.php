@@ -16,11 +16,12 @@ abstract class BaseController
 
     protected function currentUser(): ?array
     {
-        if (empty($_SESSION['user_id'])) {
+        $userId = Auth::userIdFromRequest();
+        if (!$userId) {
             return null;
         }
 
-        return $this->users->findById((int) $_SESSION['user_id']);
+        return $this->users->findById($userId);
     }
 
     protected function requireLogin(): array

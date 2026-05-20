@@ -70,11 +70,11 @@ final class PeopleRepository
         return (int) $stmt->fetchColumn();
     }
 
-    public function addParentChild(int $treeId, int $parentId, int $childId, string $relationType = 'biological'): void
+    public function addParentChild(int $treeId, int $parentId, int $childId, string $relationType = 'biological', ?int $partnershipId = null): void
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO parent_child (tree_id, parent_id, child_id, relation_type)
-             VALUES (:tree_id, :parent_id, :child_id, :relation_type)
+            'INSERT INTO parent_child (tree_id, parent_id, child_id, relation_type, partnership_id)
+             VALUES (:tree_id, :parent_id, :child_id, :relation_type, :partnership_id)
              ON CONFLICT (parent_id, child_id) DO NOTHING'
         );
         $stmt->execute([
@@ -82,7 +82,32 @@ final class PeopleRepository
             'parent_id' => $parentId,
             'child_id' => $childId,
             'relation_type' => $relationType,
+            'partnership_id' => $partnershipId,
         ]);
+    }
+
+    public function partnershipBetween(int $treeId, int $person1Id, int $person2Id): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT *
+             FROM partnerships
+             WHERE tree_id = :tree_id
+               AND (
+                   (person1_id = :person1_id AND person2_id = :person2_id)
+                   OR (person1_id = :person2_id AND person2_id = :person1_id)
+               )
+             ORDER BY
+                 CASE status WHEN 'current' THEN 0 WHEN 'spouse' THEN 1 WHEN 'former' THEN 2 ELSE 3 END,
+                 id
+             LIMIT 1"
+        );
+        $stmt->execute([
+            'tree_id' => $treeId,
+            'person1_id' => $person1Id,
+            'person2_id' => $person2Id,
+        ]);
+
+        return $stmt->fetch() ?: null;
     }
 
     public function addPartnership(array $data): void

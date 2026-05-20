@@ -10,7 +10,7 @@ final class TreeController extends BaseController
         $people = $this->people->forTree((int) $tree['id']);
         $parentLinks = $this->people->parentLinks((int) $tree['id']);
         $partnerships = $this->people->partnerships((int) $tree['id']);
-        [$positions, $width, $height] = TreeLayout::full($people, $parentLinks);
+        [$positions, $width, $height] = TreeLayout::full($people, $parentLinks, $partnerships);
 
         View::render('tree', [
             'mode' => 'full',
@@ -95,15 +95,21 @@ final class TreeController extends BaseController
             $data['y_position'] = (int) ($_POST['y_position'] ?? 120);
         }
 
+        $parentId = (int) ($_POST['parent_id'] ?? 0);
+        $coParentId = (int) ($_POST['co_parent_id'] ?? 0);
+        if (!$personId && $parentId) {
+            $parent = $this->people->find($parentId, (int) $tree['id']);
+            $coParent = $coParentId ? $this->people->find($coParentId, (int) $tree['id']) : null;
+            if (!$parent || ($coParentId && (!$coParent || $coParentId === $parentId))) {
+                flash('Wybierz poprawnych rodziców dziecka.', 'error');
+                redirect('/?page=tree&tree_id=' . $tree['id']);
+            }
+        }
+
         $savedId = $this->people->save($data, $personId ?: null);
 
-        if (!$personId && !empty($_POST['parent_id'])) {
-            $this->people->addParentChild(
-                (int) $tree['id'],
-                (int) $_POST['parent_id'],
-                $savedId,
-                $_POST['relation_type'] ?? 'biological'
-            );
+        if (!$personId && $parentId) {
+            $this->addParentLinks((int) $tree['id'], $parentId, $coParentId, $savedId, $_POST['relation_type'] ?? 'biological');
         }
 
         if (!$personId) {
@@ -148,15 +154,23 @@ final class TreeController extends BaseController
         $tree = $this->requireTree((int) $_POST['tree_id'], $user);
         $parent = $this->people->find((int) $_POST['parent_id'], (int) $tree['id']);
         $child = $this->people->find((int) $_POST['child_id'], (int) $tree['id']);
+        $coParentId = (int) ($_POST['co_parent_id'] ?? 0);
+        $coParent = $coParentId ? $this->people->find($coParentId, (int) $tree['id']) : null;
 
-        if (!$parent || !$child || (int) $parent['id'] === (int) $child['id']) {
-            flash('Wybierz dwie różne osoby z tego samego drzewa.', 'error');
+        if (
+            !$parent
+            || !$child
+            || (int) $parent['id'] === (int) $child['id']
+            || ($coParentId && (!$coParent || $coParentId === (int) $parent['id'] || $coParentId === (int) $child['id']))
+        ) {
+            flash('Wybierz poprawnych rodziców i dziecko z tego samego drzewa.', 'error');
             redirect('/?page=tree&tree_id=' . $tree['id']);
         }
 
-        $this->people->addParentChild(
+        $this->addParentLinks(
             (int) $tree['id'],
             (int) $parent['id'],
+            $coParentId,
             (int) $child['id'],
             $_POST['relation_type'] ?? 'biological'
         );
@@ -192,5 +206,16 @@ final class TreeController extends BaseController
     private function snapToGrid(int $value): int
     {
         return (int) round($value / 42) * 42;
+    }
+
+    private function addParentLinks(int $treeId, int $parentId, int $coParentId, int $childId, string $relationType): void
+    {
+        $partnership = $coParentId ? $this->people->partnershipBetween($treeId, $parentId, $coParentId) : null;
+        $partnershipId = $partnership ? (int) $partnership['id'] : null;
+
+        $this->people->addParentChild($treeId, $parentId, $childId, $relationType, $partnershipId);
+        if ($coParentId) {
+            $this->people->addParentChild($treeId, $coParentId, $childId, $relationType, $partnershipId);
+        }
     }
 }

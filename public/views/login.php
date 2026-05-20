@@ -1,3 +1,11 @@
+<?php
+$loginError ??= null;
+$loginOld ??= [];
+$registerError ??= null;
+$registerOld ??= [];
+$loginInvalid = fn (string $field): string => !empty($loginError['fields'][$field]) ? ' class="is-invalid"' : '';
+$registerInvalid = fn (string $field): string => !empty($registerError['fields'][$field]) ? ' class="is-invalid"' : '';
+?>
 <main class="login-layout">
     <section class="login-hero glass-panel">
         <p class="eyebrow">Projekt studencki</p>
@@ -9,26 +17,53 @@
         <div class="demo-grid">
             <div>
                 <strong>Administrator</strong>
-                <span>admin@example.com / admin123</span>
+                <span>admin@example.com / AdminPass!2026</span>
             </div>
             <div>
                 <strong>Użytkownik</strong>
-                <span>user@example.com / user123</span>
+                <span>user@example.com / UserPass!2026</span>
             </div>
         </div>
     </section>
 
     <section class="auth-card glass-panel">
         <h2>Zaloguj się</h2>
+        <?php if ($loginError): ?>
+            <p class="form-error"><?= h($loginError['message']) ?></p>
+        <?php endif; ?>
         <form method="post" class="stack">
             <input type="hidden" name="action" value="login">
             <label>Email
-                <input name="email" type="email" value="user@example.com" required>
+                <input name="email" type="email" value="<?= h($loginOld['email'] ?? 'user@example.com') ?>"<?= $loginInvalid('email') ?>>
             </label>
             <label>Hasło
-                <input name="password" type="password" value="user123" required>
+                <input name="password" type="password" value=""<?= $loginInvalid('password') ?>>
             </label>
             <button class="button primary" type="submit">Wejdź do aplikacji</button>
+        </form>
+
+        <hr class="auth-divider">
+
+        <h2>Utwórz konto</h2>
+        <?php if ($registerError): ?>
+            <p class="form-error"><?= h($registerError['message']) ?></p>
+        <?php endif; ?>
+        <form method="post" class="stack">
+            <input type="hidden" name="action" value="register">
+            <label>Imię i nazwisko
+                <input name="name" value="<?= h($registerOld['name'] ?? '') ?>"<?= $registerInvalid('name') ?>>
+            </label>
+            <label>Email
+                <input name="email" type="email" value="<?= h($registerOld['email'] ?? '') ?>"<?= $registerInvalid('email') ?>>
+            </label>
+            <label>Hasło
+                <input name="password" type="password"<?= $registerInvalid('password') ?>>
+            </label>
+            <label>Powtórz hasło
+                <input name="password_confirmation" type="password"<?= $registerInvalid('password_confirmation') ?>>
+            </label>
+            <p class="password-hint"><?= h(Auth::passwordRequirementsText()) ?></p>
+            <button class="button secondary" type="submit">Zarejestruj</button>
         </form>
     </section>
 </main>

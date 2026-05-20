@@ -52,7 +52,16 @@ $defaultY ??= 120;
         Osoba żyje
     </label>
     <?php if ($parentId): ?>
-        <label>Typ relacji z rodzicem
+        <label>Drugi rodzic
+            <select name="co_parent_id">
+                <option value="0">Brak / nieznany</option>
+                <?php foreach ($people as $candidate): ?>
+                    <?php if ((int) $candidate['id'] === (int) $parentId) continue; ?>
+                    <option value="<?= (int) $candidate['id'] ?>"><?= h(person_name($candidate)) ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>Typ relacji z rodzicami
             <select name="relation_type">
                 <option value="biological">Biologiczna</option>
                 <option value="adoptive">Adopcyjna</option>

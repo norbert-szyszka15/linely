@@ -226,8 +226,8 @@ EXECUTE FUNCTION update_updated_at_column();
 
 INSERT INTO users (email, password_hash, name, role)
 VALUES
-    ('admin@example.com', crypt('admin123', gen_salt('bf')), 'Administrator', 'admin'),
-    ('user@example.com', crypt('user123', gen_salt('bf')), 'Jan Kowalski', 'user');
+    ('admin@example.com', crypt('AdminPass!2026', gen_salt('bf')), 'Administrator', 'admin'),
+    ('user@example.com', crypt('UserPass!2026', gen_salt('bf')), 'Jan Kowalski', 'user');
 
 INSERT INTO family_trees (user_id, name, description)
 VALUES

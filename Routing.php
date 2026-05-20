@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/src/helpers.php';
 require_once __DIR__ . '/Database.php';
 require_once __DIR__ . '/src/View.php';
+require_once __DIR__ . '/src/Auth.php';
 require_once __DIR__ . '/src/TreeLayout.php';
 require_once __DIR__ . '/src/repositories/UsersRepository.php';
 require_once __DIR__ . '/src/repositories/TreesRepository.php';
@@ -34,6 +35,7 @@ final class Routing
     {
         match ($action) {
             'login' => (new SecurityController($db))->authenticate(),
+            'register' => (new SecurityController($db))->register(),
             'logout' => (new SecurityController($db))->logout(),
             'create_tree' => (new DashboardController($db))->createTree(),
             'delete_tree' => (new AdminController($db))->deleteTree(),
@@ -48,7 +50,7 @@ final class Routing
 
     private function dispatchPage(?string $page, PDO $db): void
     {
-        $page ??= empty($_SESSION['user_id']) ? 'login' : 'dashboard';
+        $page ??= Auth::userIdFromRequest() ? 'dashboard' : 'login';
 
         match ($page) {
             'login' => (new SecurityController($db))->login(),

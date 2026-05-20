@@ -89,6 +89,13 @@ textarea:focus {
     box-shadow: 0 0 0 4px rgba(47, 125, 115, 0.13);
 }
 
+input.is-invalid,
+select.is-invalid,
+textarea.is-invalid {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 4px rgba(184, 71, 71, 0.14);
+}
+
 label {
     display: grid;
     gap: 8px;
