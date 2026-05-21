@@ -9,7 +9,7 @@ abstract class BaseController
 
     public function __construct(protected PDO $db)
     {
-        $this->users = new UsersRepository($db);
+        $this->users = UsersRepository::instance($db);
         $this->trees = new TreesRepository($db);
         $this->people = new PeopleRepository($db);
     }

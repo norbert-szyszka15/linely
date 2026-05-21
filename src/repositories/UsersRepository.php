@@ -3,8 +3,19 @@ declare(strict_types=1);
 
 final class UsersRepository
 {
-    public function __construct(private PDO $db)
+    private static ?self $instance = null;
+
+    private function __construct(private PDO $db)
     {
+    }
+
+    public static function instance(PDO $db): self
+    {
+        if (!self::$instance) {
+            self::$instance = new self($db);
+        }
+
+        return self::$instance;
     }
 
     public function findById(int $id): ?array
@@ -40,12 +51,14 @@ final class UsersRepository
 
     public function allWithTreeCount(): array
     {
-        return $this->db->query(
+        $stmt = $this->db->prepare(
             'SELECT u.*,
                     (SELECT COUNT(*) FROM family_trees ft WHERE ft.user_id = u.id) AS trees_count
              FROM users u
              ORDER BY u.deleted_at NULLS FIRST, u.created_at DESC'
-        )->fetchAll();
+        );
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 
     public function delete(int $id): void

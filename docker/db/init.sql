@@ -226,8 +226,8 @@ EXECUTE FUNCTION update_updated_at_column();
 
 INSERT INTO users (email, password_hash, name, role)
 VALUES
-    ('admin@example.com', crypt('AdminPass!2026', gen_salt('bf')), 'Administrator', 'admin'),
-    ('user@example.com', crypt('UserPass!2026', gen_salt('bf')), 'Jan Kowalski', 'user');
+    ('admin@example.com', '$argon2id$v=19$m=65536,t=4,p=1$T2ZaVml5c2hqOUhOajlrWQ$O1KSf5BRGObONMBTq0r/eZGpmH+Bqr/svCy0342Oisc', 'Administrator', 'admin'),
+    ('user@example.com', '$argon2id$v=19$m=65536,t=4,p=1$ZnVJVW9sRXpGSUtMNkhubQ$oX4hCfejjPk3gB1Crp6RV3uwn5/qKj9nJicCh95L82Y', 'Jan Kowalski', 'user');
 
 INSERT INTO family_trees (user_id, name, description)
 VALUES

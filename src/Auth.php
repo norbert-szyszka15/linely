@@ -72,6 +72,17 @@ final class Auth
         return $errors;
     }
 
+    public static function hashPassword(string $password): string
+    {
+        $algorithm = defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : PASSWORD_DEFAULT;
+        $hash = password_hash($password, $algorithm);
+        if (!is_string($hash)) {
+            throw new RuntimeException('Nie udało się zabezpieczyć hasła.');
+        }
+
+        return $hash;
+    }
+
     public static function passwordRequirementsText(): string
     {
         return 'Hasło musi mieć minimum 12 znaków, małą i wielką literę, cyfrę oraz znak specjalny.';

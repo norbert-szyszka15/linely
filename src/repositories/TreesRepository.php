@@ -10,13 +10,15 @@ final class TreesRepository
     public function visibleFor(array $user): array
     {
         if ($user['role'] === 'admin') {
-            return $this->db->query(
+            $stmt = $this->db->prepare(
                 'SELECT ft.*, u.name AS owner_name
                  FROM family_trees ft
                  JOIN users u ON u.id = ft.user_id
                  WHERE u.deleted_at IS NULL
                  ORDER BY ft.updated_at DESC'
-            )->fetchAll();
+            );
+            $stmt->execute();
+            return $stmt->fetchAll();
         }
 
         $stmt = $this->db->prepare(

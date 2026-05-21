@@ -20,8 +20,8 @@ final class Routing
     public function dispatch(): void
     {
         $db = Database::connection();
-        $action = $_POST['action'] ?? $_GET['action'] ?? null;
-        $page = $_GET['page'] ?? null;
+        $action = $this->postAction();
+        $page = $this->queryValue('page');
 
         if ($action) {
             $this->dispatchAction($action, $db);
@@ -29,6 +29,26 @@ final class Routing
         }
 
         $this->dispatchPage($page, $db);
+    }
+
+    private function postAction(): ?string
+    {
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
+            return null;
+        }
+
+        return $this->stringValue($_POST['action'] ?? null);
+    }
+
+    private function queryValue(string $key): ?string
+    {
+        return $this->stringValue($_GET[$key] ?? null);
+    }
+
+    private function stringValue(mixed $value): ?string
+    {
+        $value = is_string($value) ? trim($value) : '';
+        return $value === '' ? null : $value;
     }
 
     private function dispatchAction(string $action, PDO $db): void

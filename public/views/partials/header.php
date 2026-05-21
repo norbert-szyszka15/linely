@@ -44,7 +44,11 @@
                     <a class="nav-link" href="/?page=admin">Admin</a>
                 <?php endif; ?>
                 <button class="icon-button" type="button" data-theme-toggle title="Zmień motyw">☾</button>
-                <a class="button secondary" href="/?action=logout">Wyloguj</a>
+                <form method="post" class="topbar-form">
+                    <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
+                    <input type="hidden" name="action" value="logout">
+                    <button class="button secondary" type="submit">Wyloguj</button>
+                </form>
             <?php else: ?>
                 <button class="icon-button" type="button" data-theme-toggle title="Zmień motyw">☾</button>
             <?php endif; ?>

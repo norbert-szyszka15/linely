@@ -32,12 +32,13 @@ $registerInvalid = fn (string $field): string => !empty($registerError['fields']
             <p class="form-error"><?= h($loginError['message']) ?></p>
         <?php endif; ?>
         <form method="post" class="stack">
+            <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="action" value="login">
             <label>Email
-                <input name="email" type="email" value="<?= h($loginOld['email'] ?? 'user@example.com') ?>"<?= $loginInvalid('email') ?>>
+                <input name="email" type="email" maxlength="255" value="<?= h($loginOld['email'] ?? 'user@example.com') ?>"<?= $loginInvalid('email') ?>>
             </label>
             <label>Hasło
-                <input name="password" type="password" value=""<?= $loginInvalid('password') ?>>
+                <input name="password" type="password" maxlength="128" value=""<?= $loginInvalid('password') ?>>
             </label>
             <button class="button primary" type="submit">Wejdź do aplikacji</button>
         </form>
@@ -49,18 +50,19 @@ $registerInvalid = fn (string $field): string => !empty($registerError['fields']
             <p class="form-error"><?= h($registerError['message']) ?></p>
         <?php endif; ?>
         <form method="post" class="stack">
+            <input type="hidden" name="csrf" value="<?= h(csrf_token()) ?>">
             <input type="hidden" name="action" value="register">
             <label>Imię i nazwisko
-                <input name="name" value="<?= h($registerOld['name'] ?? '') ?>"<?= $registerInvalid('name') ?>>
+                <input name="name" maxlength="150" value="<?= h($registerOld['name'] ?? '') ?>"<?= $registerInvalid('name') ?>>
             </label>
             <label>Email
-                <input name="email" type="email" value="<?= h($registerOld['email'] ?? '') ?>"<?= $registerInvalid('email') ?>>
+                <input name="email" type="email" maxlength="255" value="<?= h($registerOld['email'] ?? '') ?>"<?= $registerInvalid('email') ?>>
             </label>
             <label>Hasło
-                <input name="password" type="password"<?= $registerInvalid('password') ?>>
+                <input name="password" type="password" maxlength="128"<?= $registerInvalid('password') ?>>
             </label>
             <label>Powtórz hasło
-                <input name="password_confirmation" type="password"<?= $registerInvalid('password_confirmation') ?>>
+                <input name="password_confirmation" type="password" maxlength="128"<?= $registerInvalid('password_confirmation') ?>>
             </label>
             <p class="password-hint"><?= h(Auth::passwordRequirementsText()) ?></p>
             <button class="button secondary" type="submit">Zarejestruj</button>

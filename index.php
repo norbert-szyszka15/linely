@@ -19,7 +19,7 @@ try {
     $title = 'Błąd';
     $user = null;
     $flash = null;
-    $message = $exception->getMessage();
+    $message = 'Wystąpił błąd aplikacji. Spróbuj ponownie później.';
 
     require __DIR__ . '/public/views/partials/header.php';
     require __DIR__ . '/public/views/error.php';

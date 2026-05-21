@@ -27,11 +27,14 @@ function csrf_token(): string
     return $_SESSION['csrf'];
 }
 
-function verify_csrf(): void
+function verify_csrf(string $redirectUrl = '/?page=dashboard'): void
 {
-    if (($_POST['csrf'] ?? '') !== ($_SESSION['csrf'] ?? '')) {
+    $submittedToken = is_string($_POST['csrf'] ?? null) ? $_POST['csrf'] : '';
+    $sessionToken = is_string($_SESSION['csrf'] ?? null) ? $_SESSION['csrf'] : '';
+
+    if ($submittedToken === '' || $sessionToken === '' || !hash_equals($sessionToken, $submittedToken)) {
         flash('Sesja formularza wygasła. Spróbuj ponownie.', 'error');
-        redirect('/?page=dashboard');
+        redirect($redirectUrl);
     }
 }
 
