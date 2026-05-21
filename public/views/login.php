@@ -17,11 +17,11 @@ $registerInvalid = fn (string $field): string => !empty($registerError['fields']
         <div class="demo-grid">
             <div>
                 <strong>Administrator</strong>
-                <span>admin@example.com / AdminPass!2026</span>
+                <span>admin@example.com</span>
             </div>
             <div>
                 <strong>Użytkownik</strong>
-                <span>user@example.com / UserPass!2026</span>
+                <span>user@example.com</span>
             </div>
         </div>
     </section>

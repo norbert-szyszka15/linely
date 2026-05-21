@@ -23,10 +23,10 @@ http://localhost:5050
 
 ## Konta testowe
 
-| Rola | Email | Hasło |
-| --- | --- | --- |
-| Administrator | admin@example.com | admin123 |
-| Użytkownik | user@example.com | user123 |
+| Rola | Email |
+| --- | --- |
+| Administrator | admin@example.com |
+| Użytkownik | user@example.com |
 
 ## Zakres prototypu
 

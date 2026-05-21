@@ -22,7 +22,7 @@ final class SecurityController extends BaseController
 
     public function authenticate(): void
     {
-        verify_csrf('/?page=login');
+        verify_csrf();
 
         $email = trim((string) ($_POST['email'] ?? ''));
         $password = (string) ($_POST['password'] ?? '');
@@ -57,6 +57,7 @@ final class SecurityController extends BaseController
 
         $loginAttemptIdentifier = $this->loginAttemptIdentifier($email);
         if ($this->loginAttempts->isLocked($this->loginAttempts->find($loginAttemptIdentifier))) {
+            $this->auditFailedLogin($email, 'rate_limited');
             $_SESSION['login_error'] = [
                 'message' => 'Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za kilka minut.',
                 'fields' => ['email' => true, 'password' => true],
@@ -64,7 +65,7 @@ final class SecurityController extends BaseController
             redirect('/?page=login');
         }
 
-        $user = $this->users->findByEmail($email);
+        $user = $this->users->findCredentialsByEmail($email);
 
         if ($user && password_verify($password, $user['password_hash'])) {
             $this->loginAttempts->clear($loginAttemptIdentifier);
@@ -76,6 +77,7 @@ final class SecurityController extends BaseController
         }
 
         $this->loginAttempts->recordFailure($loginAttemptIdentifier, self::MAX_LOGIN_ATTEMPTS, self::LOGIN_LOCK_SECONDS);
+        $this->auditFailedLogin($email, 'invalid_credentials');
         $_SESSION['login_error'] = [
             'message' => 'Niepoprawny e-mail lub hasło.',
             'fields' => ['email' => true, 'password' => true],
@@ -85,7 +87,7 @@ final class SecurityController extends BaseController
 
     public function register(): void
     {
-        verify_csrf('/?page=login');
+        verify_csrf();
 
         $name = trim((string) ($_POST['name'] ?? ''));
         $email = trim((string) ($_POST['email'] ?? ''));
@@ -161,9 +163,21 @@ final class SecurityController extends BaseController
 
     public function logout(): void
     {
-        verify_csrf('/?page=login');
+        verify_csrf();
 
         Auth::clearCookie();
+        $_SESSION = [];
+        if (ini_get('session.use_cookies')) {
+            $params = session_get_cookie_params();
+            setcookie(session_name(), '', [
+                'expires' => time() - 3600,
+                'path' => $params['path'] ?? '/',
+                'domain' => $params['domain'] ?? '',
+                'secure' => (bool) ($params['secure'] ?? true),
+                'httponly' => (bool) ($params['httponly'] ?? true),
+                'samesite' => $params['samesite'] ?? 'Lax',
+            ]);
+        }
         session_destroy();
         redirect('/?page=login');
     }
@@ -193,6 +207,19 @@ final class SecurityController extends BaseController
     {
         $clientIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
         return hash('sha256', strtolower($email) . '|' . $clientIp);
+    }
+
+    private function auditFailedLogin(string $email, string $reason): void
+    {
+        $clientIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        $userAgent = is_string($_SERVER['HTTP_USER_AGENT'] ?? null) ? $_SERVER['HTTP_USER_AGENT'] : '';
+
+        $this->loginAttempts->recordAudit(
+            hash('sha256', strtolower($email)),
+            hash('sha256', $clientIp),
+            $userAgent,
+            $reason
+        );
     }
 
     private function regenerateSession(): void

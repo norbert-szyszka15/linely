@@ -39,6 +39,17 @@ CREATE TABLE login_attempts (
     CHECK (attempts >= 0)
 );
 
+CREATE TABLE login_audit (
+    id            INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email_hash    CHAR(64) NOT NULL,
+    ip_hash       CHAR(64) NOT NULL,
+    user_agent    VARCHAR(255),
+    reason        VARCHAR(40) NOT NULL,
+    occurred_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CHECK (reason IN ('invalid_credentials', 'rate_limited'))
+);
+
 -- ------------------------------------------------------------
 -- Family trees
 -- ------------------------------------------------------------
@@ -164,6 +175,9 @@ ON users(deleted_at);
 
 CREATE INDEX idx_login_attempts_locked_until
 ON login_attempts(locked_until);
+
+CREATE INDEX idx_login_audit_occurred_at
+ON login_audit(occurred_at);
 
 CREATE INDEX idx_family_trees_user_id
 ON family_trees(user_id);

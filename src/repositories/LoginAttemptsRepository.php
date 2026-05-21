@@ -55,6 +55,20 @@ final class LoginAttemptsRepository
         ]);
     }
 
+    public function recordAudit(string $emailHash, string $ipHash, string $userAgent, string $reason): void
+    {
+        $stmt = $this->db->prepare(
+            'INSERT INTO login_audit (email_hash, ip_hash, user_agent, reason)
+             VALUES (:email_hash, :ip_hash, :user_agent, :reason)'
+        );
+        $stmt->execute([
+            'email_hash' => $emailHash,
+            'ip_hash' => $ipHash,
+            'user_agent' => substr($userAgent, 0, 255),
+            'reason' => $reason,
+        ]);
+    }
+
     public function clear(string $identifierHash): void
     {
         $stmt = $this->db->prepare('DELETE FROM login_attempts WHERE identifier_hash = :identifier_hash');

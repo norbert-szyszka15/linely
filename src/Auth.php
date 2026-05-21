@@ -11,8 +11,6 @@ final class Auth
         $now = time();
         return self::encode([
             'sub' => (int) $user['id'],
-            'email' => (string) $user['email'],
-            'role' => (string) $user['role'],
             'iat' => $now,
             'exp' => $now + self::TOKEN_TTL,
         ]);

@@ -30,8 +30,7 @@ final class AdminController extends BaseController
         $userId = (int) $_POST['user_id'];
 
         if ($userId === (int) $user['id']) {
-            flash('Nie możesz usunąć własnego konta administratora.', 'error');
-            redirect('/?page=admin');
+            abort_http(403, 'Nie możesz wykonać tej operacji na własnym koncie.', $user);
         }
 
         $this->users->delete($userId);
@@ -43,8 +42,7 @@ final class AdminController extends BaseController
     {
         $user = $this->requireLogin();
         if ($user['role'] !== 'admin') {
-            flash('Panel administratora jest dostępny tylko dla administratora.', 'error');
-            redirect('/?page=dashboard');
+            abort_http(403, 'Nie masz uprawnień do tej części aplikacji.', $user);
         }
 
         return $user;

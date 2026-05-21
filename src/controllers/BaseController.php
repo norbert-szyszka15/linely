@@ -30,7 +30,7 @@ abstract class BaseController
     {
         $user = $this->currentUser();
         if (!$user) {
-            redirect('/?page=login');
+            abort_http(401, 'Musisz się zalogować, aby wykonać tę operację.');
         }
 
         return $user;
@@ -40,8 +40,7 @@ abstract class BaseController
     {
         $tree = $this->trees->findVisible($treeId, $user);
         if (!$tree) {
-            flash('Nie znaleziono drzewa albo nie masz do niego dostępu.', 'error');
-            redirect('/?page=dashboard');
+            abort_http(404, 'Nie znaleziono zasobu albo nie masz do niego dostępu.', $user);
         }
 
         return $tree;

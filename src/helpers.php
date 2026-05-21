@@ -12,6 +12,13 @@ function redirect(string $url): never
     exit;
 }
 
+function abort_http(int $statusCode, string $message, ?array $user = null): never
+{
+    http_response_code($statusCode);
+    View::render('error', ['message' => $message], $user, 'Błąd');
+    exit;
+}
+
 function value_or_null(string $key): ?string
 {
     $value = trim((string) ($_POST[$key] ?? ''));
@@ -27,14 +34,13 @@ function csrf_token(): string
     return $_SESSION['csrf'];
 }
 
-function verify_csrf(string $redirectUrl = '/?page=dashboard'): void
+function verify_csrf(): void
 {
     $submittedToken = is_string($_POST['csrf'] ?? null) ? $_POST['csrf'] : '';
     $sessionToken = is_string($_SESSION['csrf'] ?? null) ? $_SESSION['csrf'] : '';
 
     if ($submittedToken === '' || $sessionToken === '' || !hash_equals($sessionToken, $submittedToken)) {
-        flash('Sesja formularza wygasła. Spróbuj ponownie.', 'error');
-        redirect($redirectUrl);
+        abort_http(400, 'Sesja formularza wygasła. Spróbuj ponownie.');
     }
 }
 
