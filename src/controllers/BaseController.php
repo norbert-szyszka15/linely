@@ -4,12 +4,14 @@ declare(strict_types=1);
 abstract class BaseController
 {
     protected UsersRepository $users;
+    protected LoginAttemptsRepository $loginAttempts;
     protected TreesRepository $trees;
     protected PeopleRepository $people;
 
     public function __construct(protected PDO $db)
     {
         $this->users = UsersRepository::instance($db);
+        $this->loginAttempts = new LoginAttemptsRepository($db);
         $this->trees = new TreesRepository($db);
         $this->people = new PeopleRepository($db);
     }

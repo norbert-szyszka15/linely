@@ -7,6 +7,7 @@ require_once __DIR__ . '/src/View.php';
 require_once __DIR__ . '/src/Auth.php';
 require_once __DIR__ . '/src/TreeLayout.php';
 require_once __DIR__ . '/src/repositories/UsersRepository.php';
+require_once __DIR__ . '/src/repositories/LoginAttemptsRepository.php';
 require_once __DIR__ . '/src/repositories/TreesRepository.php';
 require_once __DIR__ . '/src/repositories/PeopleRepository.php';
 require_once __DIR__ . '/src/controllers/BaseController.php';

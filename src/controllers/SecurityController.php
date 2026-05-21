@@ -6,6 +6,8 @@ final class SecurityController extends BaseController
     private const MAX_EMAIL_LENGTH = 255;
     private const MAX_NAME_LENGTH = 150;
     private const MAX_PASSWORD_LENGTH = 128;
+    private const MAX_LOGIN_ATTEMPTS = 5;
+    private const LOGIN_LOCK_SECONDS = 900;
 
     public function login(): void
     {
@@ -53,15 +55,27 @@ final class SecurityController extends BaseController
             redirect('/?page=login');
         }
 
+        $loginAttemptIdentifier = $this->loginAttemptIdentifier($email);
+        if ($this->loginAttempts->isLocked($this->loginAttempts->find($loginAttemptIdentifier))) {
+            $_SESSION['login_error'] = [
+                'message' => 'Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za kilka minut.',
+                'fields' => ['email' => true, 'password' => true],
+            ];
+            redirect('/?page=login');
+        }
+
         $user = $this->users->findByEmail($email);
 
         if ($user && password_verify($password, $user['password_hash'])) {
+            $this->loginAttempts->clear($loginAttemptIdentifier);
+            $this->regenerateSession();
             unset($_SESSION['login_old']);
             Auth::setCookie(Auth::issue($user));
             flash('Zalogowano pomyślnie.');
             redirect('/?page=dashboard');
         }
 
+        $this->loginAttempts->recordFailure($loginAttemptIdentifier, self::MAX_LOGIN_ATTEMPTS, self::LOGIN_LOCK_SECONDS);
         $_SESSION['login_error'] = [
             'message' => 'Niepoprawny e-mail lub hasło.',
             'fields' => ['email' => true, 'password' => true],
@@ -121,13 +135,23 @@ final class SecurityController extends BaseController
         if ($this->users->findByEmail($email)) {
             $_SESSION['register_error'] = [
                 'message' => 'Nie można utworzyć konta dla podanych danych.',
-                'fields' => ['email' => true],
+                'fields' => [],
             ];
             redirect('/?page=login');
         }
 
-        $userId = $this->users->create($email, Auth::hashPassword($password), $name);
+        try {
+            $userId = $this->users->create($email, Auth::hashPassword($password), $name);
+        } catch (PDOException) {
+            $_SESSION['register_error'] = [
+                'message' => 'Nie można utworzyć konta dla podanych danych.',
+                'fields' => [],
+            ];
+            redirect('/?page=login');
+        }
+
         $user = $this->users->findById($userId);
+        $this->regenerateSession();
         unset($_SESSION['register_old']);
 
         Auth::setCookie(Auth::issue($user));
@@ -163,5 +187,18 @@ final class SecurityController extends BaseController
     {
         $length = function_exists('mb_strlen') ? mb_strlen($value, 'UTF-8') : strlen($value);
         return $length <= $maxLength;
+    }
+
+    private function loginAttemptIdentifier(string $email): string
+    {
+        $clientIp = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+        return hash('sha256', strtolower($email) . '|' . $clientIp);
+    }
+
+    private function regenerateSession(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_regenerate_id(true);
+        }
     }
 }

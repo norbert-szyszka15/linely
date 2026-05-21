@@ -25,6 +25,21 @@ CREATE TABLE users (
 );
 
 -- ------------------------------------------------------------
+-- Login attempt throttling
+-- ------------------------------------------------------------
+
+CREATE TABLE login_attempts (
+    id                INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    identifier_hash   CHAR(64) NOT NULL UNIQUE,
+    attempts          INTEGER NOT NULL DEFAULT 0,
+    locked_until      TIMESTAMP NULL,
+    last_attempt_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CHECK (attempts >= 0)
+);
+
+-- ------------------------------------------------------------
 -- Family trees
 -- ------------------------------------------------------------
 
@@ -146,6 +161,9 @@ CREATE TABLE media_files (
 
 CREATE INDEX idx_users_deleted_at
 ON users(deleted_at);
+
+CREATE INDEX idx_login_attempts_locked_until
+ON login_attempts(locked_until);
 
 CREATE INDEX idx_family_trees_user_id
 ON family_trees(user_id);
