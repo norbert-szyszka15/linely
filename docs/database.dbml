@@ -1,0 +1,240 @@
+// Linely database schema
+// Source: docker/db/init.sql
+//
+// Suggested dbdiagram.io layout after import:
+// 1. users -> family_trees on the top row.
+// 2. persons below family_trees, as the central table.
+// 3. partnerships and parent_child below persons.
+// 4. media_files to the right of persons.
+// 5. login_attempts and login_audit in a separate security area.
+
+Project linely {
+  database_type: 'PostgreSQL'
+  Note: 'ERD for the Linely family tree application.'
+}
+
+Enum user_role {
+  user
+  admin
+}
+
+Enum person_gender {
+  male
+  female
+  other
+  unknown
+}
+
+Enum partnership_status {
+  current
+  former
+  spouse
+}
+
+Enum parent_child_relation_type {
+  biological
+  adoptive
+  step
+  unknown
+}
+
+Enum login_audit_reason {
+  invalid_credentials
+  rate_limited
+}
+
+// ------------------------------------------------------------
+// Account ownership layer
+// ------------------------------------------------------------
+
+Table users [headercolor: #2563EB] {
+  id integer [pk, increment]
+  email varchar(255) [not null, unique]
+  password_hash text [not null]
+  name varchar(150) [not null]
+  role user_role [not null, default: 'user']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  deleted_at timestamp
+
+  Indexes {
+    deleted_at [name: 'idx_users_deleted_at']
+  }
+}
+
+Table family_trees [headercolor: #2563EB] {
+  id integer [pk, increment]
+  user_id integer [not null]
+  name varchar(150) [not null]
+  description text
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  root_person_id integer
+
+  Indexes {
+    user_id [name: 'idx_family_trees_user_id']
+    root_person_id [name: 'idx_family_trees_root_person_id']
+  }
+}
+
+// ------------------------------------------------------------
+// Central genealogy model
+// ------------------------------------------------------------
+
+Table persons [headercolor: #059669] {
+  id integer [pk, increment]
+  tree_id integer [not null]
+  first_name varchar(100) [not null]
+  last_name varchar(100)
+  maiden_name varchar(100)
+  gender person_gender [default: 'unknown']
+  birth_date date
+  birth_place varchar(255)
+  death_date date
+  death_place varchar(255)
+  is_living boolean [not null, default: true]
+  occupation varchar(255)
+  notes text
+  photo_path text
+  avatar_color varchar(20) [default: '#5f8f86']
+  x_position integer
+  y_position integer
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    tree_id [name: 'idx_persons_tree_id']
+    (tree_id, last_name, first_name) [name: 'idx_persons_name']
+    (tree_id, x_position, y_position) [name: 'idx_persons_position']
+  }
+}
+
+Table media_files [headercolor: #059669] {
+  id integer [pk, increment]
+  person_id integer [not null]
+  file_name varchar(255) [not null]
+  original_name varchar(255)
+  file_path text [not null]
+  mime_type varchar(100)
+  description text
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    person_id [name: 'idx_media_files_person_id']
+  }
+}
+
+// ------------------------------------------------------------
+// Genealogy relationships
+// ------------------------------------------------------------
+
+Table partnerships [headercolor: #7C3AED] {
+  id integer [pk, increment]
+  tree_id integer [not null]
+  person1_id integer [not null, note: 'CHECK person1_id <> person2_id']
+  person2_id integer [not null]
+  status partnership_status [not null, default: 'current']
+  start_date date
+  end_date date
+  notes text
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    tree_id [name: 'idx_partnerships_tree_id']
+    person1_id [name: 'idx_partnerships_person1']
+    person2_id [name: 'idx_partnerships_person2']
+  }
+}
+
+Table parent_child [headercolor: #7C3AED] {
+  id integer [pk, increment]
+  tree_id integer [not null]
+  parent_id integer [not null, note: 'CHECK parent_id <> child_id']
+  child_id integer [not null]
+  partnership_id integer
+  relation_type parent_child_relation_type [not null, default: 'biological']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    tree_id [name: 'idx_parent_child_tree_id']
+    parent_id [name: 'idx_parent_child_parent']
+    child_id [name: 'idx_parent_child_child']
+    (parent_id, child_id) [unique, name: 'parent_child_parent_id_child_id_key']
+  }
+}
+
+// ------------------------------------------------------------
+// Login security
+// ------------------------------------------------------------
+
+Table login_attempts [headercolor: #DC2626] {
+  id integer [pk, increment]
+  identifier_hash char(64) [not null, unique]
+  attempts integer [not null, default: 0, note: 'CHECK attempts >= 0']
+  locked_until timestamp
+  last_attempt_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    locked_until [name: 'idx_login_attempts_locked_until']
+  }
+}
+
+Table login_audit [headercolor: #DC2626] {
+  id integer [pk, increment]
+  email_hash char(64) [not null]
+  ip_hash char(64) [not null]
+  user_agent varchar(255)
+  reason login_audit_reason [not null]
+  occurred_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    occurred_at [name: 'idx_login_audit_occurred_at']
+  }
+}
+
+// ------------------------------------------------------------
+// Visual groups for dbdiagram.io
+// ------------------------------------------------------------
+
+TableGroup account_and_trees {
+  users
+  family_trees
+}
+
+TableGroup person_data {
+  persons
+  media_files
+}
+
+TableGroup genealogy_links {
+  partnerships
+  parent_child
+}
+
+TableGroup login_security {
+  login_attempts
+  login_audit
+}
+
+// ------------------------------------------------------------
+// References
+// ------------------------------------------------------------
+
+Ref: family_trees.user_id > users.id [delete: cascade]
+
+Ref: persons.tree_id > family_trees.id [delete: cascade]
+Ref: family_trees.root_person_id > persons.id [delete: set null]
+
+Ref: media_files.person_id > persons.id [delete: cascade]
+
+Ref: partnerships.tree_id > family_trees.id [delete: cascade]
+Ref: partnerships.person1_id > persons.id [delete: cascade]
+Ref: partnerships.person2_id > persons.id [delete: cascade]
+
+Ref: parent_child.tree_id > family_trees.id [delete: cascade]
+Ref: parent_child.parent_id > persons.id [delete: cascade]
+Ref: parent_child.child_id > persons.id [delete: cascade]
+Ref: parent_child.partnership_id > partnerships.id [delete: set null]

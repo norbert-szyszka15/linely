@@ -62,3 +62,21 @@ Routing.php
 ```
 
 Po zmianach w `docker/db/init.sql` warto uruchomić projekt komendą `docker compose down -v`, żeby baza została utworzona od nowa z aktualnego schematu.
+
+## Testy
+
+Testy nie wymagają dodatkowych zależności. Uruchomienie całego zestawu:
+
+```bash
+docker compose up -d server db
+docker compose run --rm php php /app/tests/run.php
+```
+
+Osobne zestawy:
+
+```bash
+docker compose run --rm php php /app/tests/run.php unit
+docker compose run --rm php php /app/tests/run.php e2e
+```
+
+Testy E2E działają po HTTP(S) na uruchomionej aplikacji, ustawiają znane hasła kont demo i czyszczą dane testowe z prefiksem `E2E_`. Obejmują logowanie, rejestrację, CSRF, uprawnienia, CRUD drzewa, listę osób, dodawanie/edycję/usuwanie osoby, relacje partner-dziecko oraz panel administratora.

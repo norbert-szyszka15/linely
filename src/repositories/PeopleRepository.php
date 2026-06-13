@@ -133,4 +133,13 @@ final class PeopleRepository
         ]);
     }
 
+    public function delete(int $treeId, int $personId): void
+    {
+        $stmt = $this->db->prepare('DELETE FROM persons WHERE id = :id AND tree_id = :tree_id');
+        $stmt->execute([
+            'id' => $personId,
+            'tree_id' => $treeId,
+        ]);
+    }
+
 }

@@ -90,6 +90,7 @@
 
 .page-grid,
 .tree-page,
+.people-page,
 .admin-page,
 .form-page {
     display: grid;
@@ -123,6 +124,23 @@
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+}
+
+.tree-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+}
+
+.tree-toolbar > div:first-child {
+    min-width: 0;
+}
+
+.tree-toolbar .toolbar-actions {
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    min-width: min(100%, 470px);
 }
 
 .empty-state {

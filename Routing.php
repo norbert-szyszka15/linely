@@ -65,6 +65,7 @@ final class Routing
             'add_partner' => (new TreeController($db))->addPartner(),
             'connect_child' => (new TreeController($db))->connectChild(),
             'update_position' => (new TreeController($db))->updatePosition(),
+            'delete_person' => (new TreeController($db))->deletePerson(),
             default => $this->notFound($db),
         };
     }
@@ -78,6 +79,7 @@ final class Routing
             'dashboard' => (new DashboardController($db))->index(),
             'tree' => (new TreeController($db))->full(),
             'descendants' => (new TreeController($db))->descendants(),
+            'people' => (new TreeController($db))->people(),
             'admin' => (new AdminController($db))->index(),
             default => $this->notFound($db),
         };

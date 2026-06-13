@@ -40,17 +40,6 @@ final class TreeController extends BaseController
             $root = $people[0];
         }
 
-        $historyKey = 'desc_history_' . $tree['id'];
-        $_SESSION[$historyKey] ??= [];
-        if (isset($_GET['back'])) {
-            array_pop($_SESSION[$historyKey]);
-            $previous = end($_SESSION[$historyKey]) ?: ($tree['root_person_id'] ?: $rootId);
-            redirect('/?page=descendants&tree_id=' . (int) $tree['id'] . '&root_id=' . (int) $previous);
-        }
-        if ($rootId && end($_SESSION[$historyKey]) !== $rootId) {
-            $_SESSION[$historyKey][] = $rootId;
-        }
-
         if ($rootId) {
             [$positions, $width, $height, $visibleIds] = TreeLayout::lineage($people, $parentLinks, $partnerships, $rootId);
             $visible = array_flip(array_map('intval', $visibleIds));
@@ -73,8 +62,19 @@ final class TreeController extends BaseController
             'height' => $height,
             'rootId' => $rootId,
             'root' => $root,
-            'canGoBack' => count($_SESSION[$historyKey]) > 1,
         ], $user, 'Linia prosta');
+    }
+
+    public function people(): void
+    {
+        $user = $this->requireLogin();
+        $tree = $this->requireTree((int) ($_GET['tree_id'] ?? 0), $user);
+        $people = $this->people->forTree((int) $tree['id']);
+
+        View::render('people', [
+            'tree' => $tree,
+            'people' => $people,
+        ], $user, 'Członkowie rodziny');
     }
 
     public function savePerson(): void
@@ -201,6 +201,25 @@ final class TreeController extends BaseController
 
         header('Content-Type: application/json');
         echo json_encode(['ok' => true]);
+    }
+
+    public function deletePerson(): void
+    {
+        verify_csrf();
+        $user = $this->requireLogin();
+        $tree = $this->requireTree((int) $_POST['tree_id'], $user);
+        $person = $this->people->find((int) $_POST['person_id'], (int) $tree['id']);
+        $returnTo = (string) ($_POST['return_to'] ?? 'people');
+        $redirectPage = $returnTo === 'tree' ? 'tree' : 'people';
+
+        if (!$person) {
+            flash('Nie znaleziono osoby do usunięcia.', 'error');
+            redirect('/?page=' . $redirectPage . '&tree_id=' . (int) $tree['id']);
+        }
+
+        $this->people->delete((int) $tree['id'], (int) $person['id']);
+        flash('Usunięto osobę z drzewa.');
+        redirect('/?page=' . $redirectPage . '&tree_id=' . (int) $tree['id']);
     }
 
     private function snapToGrid(int $value): int

@@ -9,11 +9,63 @@
         const baseHeight = Number(stage.dataset.baseHeight);
         let zoom = 1;
         const gridSize = 42;
+        const minZoom = 0.45;
+        const maxZoom = 1.7;
+        const viewStateKey = `linely-tree-view:${treeRoot.dataset.treeId || "unknown"}:${treeRoot.dataset.treeMode || "full"}`;
+        let savedViewState = readViewState();
+        let restoringViewState = true;
+        let viewStateFrame = 0;
         transform.style.width = `${baseWidth}px`;
         transform.style.height = `${baseHeight}px`;
         if (lines) {
             lines.style.width = `${baseWidth}px`;
             lines.style.height = `${baseHeight}px`;
+        }
+
+        if (savedViewState?.zoom) {
+            zoom = clampZoom(savedViewState.zoom);
+        }
+        transform.style.setProperty("--tree-zoom", zoom);
+        zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
+
+        function clampZoom(value) {
+            return Math.min(maxZoom, Math.max(minZoom, Number(value) || 1));
+        }
+
+        function readViewState() {
+            try {
+                const state = JSON.parse(localStorage.getItem(viewStateKey) || "null");
+                if (!state || typeof state !== "object") {
+                    return null;
+                }
+
+                return {
+                    zoom: Number(state.zoom) || 1,
+                    scrollLeft: Number(state.scrollLeft) || 0,
+                    scrollTop: Number(state.scrollTop) || 0,
+                };
+            } catch {
+                return null;
+            }
+        }
+
+        function saveViewState() {
+            if (restoringViewState || viewStateFrame) {
+                return;
+            }
+
+            viewStateFrame = requestAnimationFrame(() => {
+                viewStateFrame = 0;
+                try {
+                    localStorage.setItem(viewStateKey, JSON.stringify({
+                        zoom,
+                        scrollLeft: viewport.scrollLeft,
+                        scrollTop: viewport.scrollTop,
+                    }));
+                } catch {
+                    // Local storage can be unavailable in private modes.
+                }
+            });
         }
 
         function snap(value) {
@@ -232,7 +284,7 @@
 
         function setZoom(nextZoom) {
             const previousZoom = zoom;
-            zoom = Math.min(1.7, Math.max(0.45, nextZoom));
+            zoom = clampZoom(nextZoom);
             transform.style.setProperty("--tree-zoom", zoom);
             resizeStage();
             zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
@@ -240,6 +292,7 @@
             const factor = zoom / previousZoom;
             viewport.scrollLeft = (viewport.scrollLeft + viewport.clientWidth / 2) * factor - viewport.clientWidth / 2;
             viewport.scrollTop = (viewport.scrollTop + viewport.clientHeight / 2) * factor - viewport.clientHeight / 2;
+            saveViewState();
         }
 
         treeRoot.querySelector("[data-zoom-in]")?.addEventListener("click", () => setZoom(zoom + 0.08));
@@ -255,6 +308,8 @@
             const zoomDelta = Math.max(-0.035, Math.min(0.035, -event.deltaY * 0.001));
             setZoom(zoom + zoomDelta);
         }, { passive: false });
+
+        viewport.addEventListener("scroll", saveViewState, { passive: true });
 
         let pan = null;
         viewport.addEventListener("pointerdown", (event) => {
@@ -415,8 +470,18 @@
         requestAnimationFrame(() => {
             resizeStage();
             updateLines();
-            viewport.scrollLeft = Math.max(0, (stage.offsetWidth - viewport.clientWidth) / 2);
-            viewport.scrollTop = Math.max(0, (stage.offsetHeight - viewport.clientHeight) / 2);
+            if (savedViewState) {
+                viewport.scrollLeft = Math.max(0, savedViewState.scrollLeft);
+                viewport.scrollTop = Math.max(0, savedViewState.scrollTop);
+            } else {
+                viewport.scrollLeft = Math.max(0, (stage.offsetWidth - viewport.clientWidth) / 2);
+                viewport.scrollTop = Math.max(0, (stage.offsetHeight - viewport.clientHeight) / 2);
+            }
+
+            requestAnimationFrame(() => {
+                restoringViewState = false;
+                saveViewState();
+            });
         });
     });
 })();

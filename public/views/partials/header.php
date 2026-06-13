@@ -40,6 +40,9 @@
         <nav class="top-actions">
             <?php if ($user): ?>
                 <a class="nav-link" href="/?page=dashboard">Drzewa</a>
+                <?php if (isset($tree) && is_array($tree) && !empty($tree['id'])): ?>
+                    <a class="nav-link" href="/?page=people&tree_id=<?= (int) $tree['id'] ?>">Lista osób</a>
+                <?php endif; ?>
                 <?php if ($user['role'] === 'admin'): ?>
                     <a class="nav-link" href="/?page=admin">Admin</a>
                 <?php endif; ?>

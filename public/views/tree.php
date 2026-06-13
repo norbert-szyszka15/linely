@@ -40,8 +40,11 @@ foreach ($parentsByChild as $childId => $parentIds) {
             </p>
         </div>
         <div class="toolbar-actions">
-            <?php if ($isDescendants && !empty($canGoBack)): ?>
-                <a class="button secondary" href="/?page=descendants&tree_id=<?= (int) $tree['id'] ?>&back=1">Wstecz</a>
+            <?php if ($people): ?>
+                <div class="tree-search" data-tree-search>
+                    <input type="search" data-tree-search-input placeholder="Szukaj osoby" autocomplete="off" aria-label="Szukaj osoby w drzewie">
+                    <div class="tree-search-results" data-tree-search-results hidden></div>
+                </div>
             <?php endif; ?>
             <?php if (!$isDescendants): ?>
                 <button class="button primary" type="button" data-modal-target="person-new">Dodaj osobę</button>
@@ -57,7 +60,7 @@ foreach ($parentsByChild as $childId => $parentIds) {
             <button class="button primary" type="button" data-modal-target="person-new">Dodaj pierwszą osobę</button>
         </section>
     <?php else: ?>
-        <section class="tree-workspace" data-tree-root data-tree-id="<?= (int) $tree['id'] ?>" data-csrf="<?= h(csrf_token()) ?>">
+        <section class="tree-workspace" data-tree-root data-tree-id="<?= (int) $tree['id'] ?>" data-tree-mode="<?= h($mode) ?>" data-csrf="<?= h(csrf_token()) ?>">
             <div class="tree-controls glass-panel">
                 <button class="icon-button" type="button" data-zoom-out title="Oddal">−</button>
                 <output data-zoom-label>100%</output>
@@ -112,6 +115,8 @@ foreach ($parentsByChild as $childId => $parentIds) {
                             <article class="person-node <?= $rootId === $id ? 'is-root' : '' ?>"
                                      data-node
                                      data-person-id="<?= (int) $id ?>"
+                                     data-person-name="<?= h(person_name($person)) ?>"
+                                     data-person-search="<?= h(person_name($person) . ' ' . person_years($person) . ' ' . ($person['occupation'] ?? '')) ?>"
                                      data-draggable="<?= $isDescendants ? 'false' : 'true' ?>"
                                      style="left: <?= (int) $position['x'] ?>px; top: <?= (int) $position['y'] ?>px;">
                                 <?php if ($isDescendants): ?>
